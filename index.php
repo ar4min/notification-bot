@@ -9,6 +9,7 @@ function ToDie($MySQLi){
 $MySQLi->close();
 die;
 }
+if(!file_exists('BotAdmins')) file_put_contents('BotAdmins','[]');
 $update = json_decode(file_get_contents('php://input'));
 $message = $update->message;
 $msg = $message->text;
@@ -17,6 +18,11 @@ $chat_id = $message->chat->id;
 $from_id = $message->from->id;
 $first_name = $message->from->first_name;
 $message_id = $message->message_id;
+$BotAdmins = json_decode(file_get_contents('BotAdmins'),true);
+if(!in_array(ADMIN_ID,$BotAdmins)){
+$BotAdmins[] = ADMIN_ID;
+file_put_contents('BotAdmins',json_encode($BotAdmins,true));
+}
 if($update and $tc == 'private' and !in_array($from_id,$BotAdmins)){
 GoldDev('DeleteMessage',[
 'chat_id' => $from_id,
@@ -27,8 +33,21 @@ ToDie($MySQLi);
 if($msg == '/start' and $tc == 'private' and in_array($from_id,$BotAdmins)){
 GoldDev('sendMessage',[
 'chat_id' => $from_id,
-'text'=> 'برای ارسال پیام به تمامی گروه های ربات لطفا پیام خود را ارسال کنید 👇🏻
-پ.ن : میتوانید از انواع رسانه نیز استفاده نمایید!',
+'text'=> 'سلام ادمین گرامی!
+به ربات مدیریت گروه هایتان خوش آمدید.
+برای ارسال پیام به تمامی گروه های نصب شده کافیست پیام خود را ارسال نمایید. (میتواند شامل تمام رسانه ها نیز باشد!)
+
+دستورات مخصوص مدیر اصلی :
+<pre>/add</pre>
+<pre>/del</pre>
+<pre>/admins</pre>
+
+برای مثال برای ادمین کردن فرد کافیست آیدی عددی فرد را بهمراه دستور add بصورت زیر به ربات ارسال کنید 👇🏻
+<b>/add 122546658</b>
+برای حذف فرد از ادمینی 👇🏻
+<b>/del 122546658</b>
+برای دریافت لیست ادمین ها 👇🏻
+<b>/admins</b>',
 'reply_to_message_id'=>$message_id,
 'parse_mode' => 'HTML',
 ]);
@@ -36,18 +55,18 @@ ToDie($MySQLi);
 }
 if($tc !== 'private' and isset($update->message->new_chat_member)){
 if($update->message->new_chat_member->username !== str_replace('@','',BOT_USERNAME)) ToDie($MySQLi);
-if(!in_array($from_id,$BotAdmins)){
-GoldDev('sendMessage',[
-'chat_id' => $chat_id,
-'text'=> 'من باید توسط ادمین های ربات به گروه ادد شوم!',
-'reply_to_message_id'=>$message_id,
-'parse_mode' => 'HTML',
-]);
-GoldDev('leaveChat',[
-'chat_id'=>$chat_id,
-]);
-ToDie($MySQLi);
-}
+// if(!in_array($from_id,$BotAdmins)){
+// GoldDev('sendMessage',[
+// 'chat_id' => $chat_id,
+// 'text'=> 'من باید توسط ادمین های ربات به گروه ادد شوم!',
+// 'reply_to_message_id'=>$message_id,
+// 'parse_mode' => 'HTML',
+// ]);
+// GoldDev('leaveChat',[
+// 'chat_id'=>$chat_id,
+// ]);
+// ToDie($MySQLi);
+// }
 $GroupID = $chat_id;
 $GroupName = $message->chat->title;
 $NowDate = jdate('l').' '.jdate('j').' '.jdate('F').' '.jdate('Y').' | '.jdate('H').':'.jdate('i').':'.jdate('s');
@@ -80,6 +99,71 @@ GoldDev('sendMessage',[
 'parse_mode' => 'MarkDown',
 ]);
 }
+ToDie($MySQLi);
+}
+if(explode(' ',$msg)[0] == '/add' and explode(' ',$msg)[1] !== null){
+if ($from_id !== ADMIN_ID) ToDie($MySQLi);
+$HisID = explode(' ',$msg)[1];
+$MenTionUser = "[این کاربر با موفقیت در ربات شما ادمین شد!](tg://user?id=$HisID)";
+GoldDev('sendMessage',[
+'chat_id' => $from_id,
+'text'=> $MenTionUser,
+'reply_to_message_id'=>$message_id,
+'parse_mode' => 'MarkDown',
+]);
+GoldDev('sendMessage',[
+'chat_id' => $HisID,
+'text'=> 'شما با موفقیت در ربات ادمین شدید!
+لطفا یک مرتبه ربات را استارت کنید.',
+'parse_mode' => 'MarkDown',
+]);
+if(!in_array($HisID,$BotAdmins)){
+$BotAdmins[] = (int)$HisID;
+file_put_contents('BotAdmins',json_encode($BotAdmins,true));
+}
+ToDie($MySQLi);
+}
+if(explode(' ',$msg)[0] == '/del' and explode(' ',$msg)[1] !== null){
+if ($from_id !== ADMIN_ID) ToDie($MySQLi);
+$HisID = explode(' ',$msg)[1];
+$MenTionUser = "[این کاربر با موفقیت از لیست ادمین های ربات خارج شد!](tg://user?id=$HisID)";
+GoldDev('sendMessage',[
+'chat_id' => $from_id,
+'text'=> $MenTionUser,
+'reply_to_message_id'=>$message_id,
+'parse_mode' => 'MarkDown',
+]);
+GoldDev('sendMessage',[
+'chat_id' => $HisID,
+'text'=> 'شما از لیست ادمین های ربات خارج شدید.
+لطفا یک مرتبه ربات را استارت کنید.',
+'parse_mode' => 'MarkDown',
+]);
+if(in_array($HisID,$BotAdmins)){
+$index = 0;
+foreach($BotAdmins as $key){
+if($BotAdmins[$index] == $HisID) break;
+$index++;
+}
+unset($BotAdmins[$index]);
+file_put_contents('BotAdmins',json_encode($BotAdmins,true));
+}
+ToDie($MySQLi);
+}
+if($msg == '/admins'){
+if ($from_id !== ADMIN_ID) ToDie($MySQLi);
+$c = 1;
+$MyStr = 'لیست ادمین های ربات :'."\n";
+foreach($BotAdmins as $key){
+$MyStr .= $c.'- '."[$key](tg://user?id=$key)"."\n";
+$c++;
+}
+GoldDev('sendMessage',[
+'chat_id' => $from_id,
+'text'=> $MyStr,
+'reply_to_message_id'=>$message_id,
+'parse_mode' => 'MarkDown',
+]);
 ToDie($MySQLi);
 }
 if($update and in_array($from_id,$BotAdmins) and $tc == 'private'){
