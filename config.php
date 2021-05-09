@@ -2,19 +2,18 @@
 date_default_timezone_set('Asia/Tehran');
 error_reporting(0);
 ini_set("log_errors","off");
+//                                                       //
+
 $DB = [
-'dbname' => "dbname", // نام دیتابیس را اینجا وارد کنید
-'username' => "username", //یوزرنیم دیتابیس را اینجاوارد کنید
+'dbname' => '', // نام دیتابیس را اینجا وارد کنید
+'username' => '', //یوزرنیم دیتابیس را اینجاوارد کنید
 'password' => '' //پسورد دیتابیس را اینجا وارد کنید
 ];
 define('BOT_TOKEN',''); // توکن ربات اصلی
 define('BOT_USERNAME',''); // یوزرنیم ربات اصلی بدون ادساین
-$BotAdmins = [
-0002,
-0001,
-0000,
-]; // آیدی عددی ادمین های ربات
+define('ADMIN_ID',XXXXX); // آیدی عددی ادمین اصلی ربات
 
+//                                                       //
 function GoldDev($method,$datas=[]){
 $url = "https://api.telegram.org/bot".BOT_TOKEN."/".$method;
 $ch = curl_init();
