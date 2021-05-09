@@ -23,10 +23,15 @@ If you are successful in creating tables in the bot database, we will set and sa
 
 __________
 How to set up a bot?
+
 Description: After making this API robot, you have to set and upgrade ...
+
 http://api.telegram.org/bot🤖/setwebhook?url=🌐
+
 1 - Instead of 🤖 token, put your robot without a space.
+
 2 - Instead of 🌐 exact and complete address where Sourston is located.
+
 3 - Then open the link once with a VPN.
 
 
