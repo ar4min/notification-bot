@@ -1,14 +1,21 @@
 <?php
 include ('config.php');
 include ('jdf.php');
-$MySQLi = new mysqli('localhost',$DB['username'],$DB['password'],$DB['dbname']);
-$MySQLi->query("SET NAMES 'utf8'");
-$MySQLi->set_charset('utf8mb4');
-if ($MySQLi->connect_error) die;
-function ToDie($MySQLi){
-$MySQLi->close();
-die;
-}
+
+    $dbHost="localhost";  
+    $dbName=$DB['dbname'];  
+    $dbUser=$DB['username'];     
+    $dbPassword=$DB['password'];
+    
+    $dbConn = new PDO("mysql:host=$dbHost;dbname=$dbName",$dbUser,$dbPassword);  
+    $dbConn->exec("set names utf8");
+
+    function ToDie($dbConn){
+     $dbConn = null; 
+    die;    
+    }
+
+
 if(!file_exists('BotAdmins')) file_put_contents('BotAdmins','[]');
 $update = json_decode(file_get_contents('php://input'));
 $message = $update->message;
@@ -28,7 +35,7 @@ GoldDev('DeleteMessage',[
 'chat_id' => $from_id,
 'message_id' => $message_id,
 ]);
-ToDie($MySQLi);
+ToDie($dbConn);
 }
 if($msg == '/start' and $tc == 'private' and in_array($from_id,$BotAdmins)){
 GoldDev('sendMessage',[
@@ -51,10 +58,10 @@ GoldDev('sendMessage',[
 'reply_to_message_id'=>$message_id,
 'parse_mode' => 'HTML',
 ]);
-ToDie($MySQLi);
+ToDie($dbConn);
 }
 if($tc !== 'private' and isset($update->message->new_chat_member)){
-if($update->message->new_chat_member->username !== str_replace('@','',BOT_USERNAME)) ToDie($MySQLi);
+if($update->message->new_chat_member->username !== str_replace('@','',BOT_USERNAME)) ToDie($dbConn);
 // if(!in_array($from_id,$BotAdmins)){
 // GoldDev('sendMessage',[
 // 'chat_id' => $chat_id,
@@ -65,14 +72,23 @@ if($update->message->new_chat_member->username !== str_replace('@','',BOT_USERNA
 // GoldDev('leaveChat',[
 // 'chat_id'=>$chat_id,
 // ]);
-// ToDie($MySQLi);
+// ToDie($dbConn);
 // }
+
 $GroupID = $chat_id;
 $GroupName = $message->chat->title;
 $NowDate = jdate('l').' '.jdate('j').' '.jdate('F').' '.jdate('Y').' | '.jdate('H').':'.jdate('i').':'.jdate('s');
-$HisDataBase = mysqli_fetch_assoc(mysqli_query($MySQLi, "SELECT * FROM `group` WHERE `id` = '{$GroupID}' LIMIT 1"));
+$query = $dbConn->prepare("SELECT * FROM `group` WHERE `id` = '{$GroupID}' LIMIT 1");
+    $query->execute();
+    $HisDataBase = $query->fetchall();
 if(!$HisDataBase){
-$MySQLi->query("INSERT INTO `group` (`id`,`name`,`date`) VALUES ('{$GroupID}','{$GroupName}','{$NowDate}')");
+    
+    $st = $dbConn->prepare("INSERT INTO `group`(id,name,date) VALUES(:id,:name,:date)");
+    $st->bindParam(':id',   $GroupID);
+    $st->bindParam(':name', $GroupName);
+    $st->bindParam(':date', $NowDate);
+    $exec = $st->execute();
+    
 $MenTionUser = "[$first_name](tg://user?id=$from_id)";
 GoldDev('sendMessage',[
 'chat_id' => $chat_id,
@@ -99,10 +115,10 @@ GoldDev('sendMessage',[
 'parse_mode' => 'MarkDown',
 ]);
 }
-ToDie($MySQLi);
+ToDie($dbConn);
 }
 if(explode(' ',$msg)[0] == '/add' and explode(' ',$msg)[1] !== null){
-if ($from_id !== ADMIN_ID) ToDie($MySQLi);
+if ($from_id !== ADMIN_ID) ToDie($dbConn);
 $HisID = explode(' ',$msg)[1];
 $MenTionUser = "[این کاربر با موفقیت در ربات شما ادمین شد!](tg://user?id=$HisID)";
 GoldDev('sendMessage',[
@@ -121,10 +137,10 @@ if(!in_array($HisID,$BotAdmins)){
 $BotAdmins[] = (int)$HisID;
 file_put_contents('BotAdmins',json_encode($BotAdmins,true));
 }
-ToDie($MySQLi);
+ToDie($dbConn);
 }
 if(explode(' ',$msg)[0] == '/del' and explode(' ',$msg)[1] !== null){
-if ($from_id !== ADMIN_ID) ToDie($MySQLi);
+if ($from_id !== ADMIN_ID) ToDie($dbConn);
 $HisID = explode(' ',$msg)[1];
 $MenTionUser = "[این کاربر با موفقیت از لیست ادمین های ربات خارج شد!](tg://user?id=$HisID)";
 GoldDev('sendMessage',[
@@ -148,10 +164,10 @@ $index++;
 unset($BotAdmins[$index]);
 file_put_contents('BotAdmins',json_encode($BotAdmins,true));
 }
-ToDie($MySQLi);
+ToDie($dbConn);
 }
 if($msg == '/admins'){
-if ($from_id !== ADMIN_ID) ToDie($MySQLi);
+if ($from_id !== ADMIN_ID) ToDie($dbConn);
 $c = 1;
 $MyStr = 'لیست ادمین های ربات :'."\n";
 foreach($BotAdmins as $key){
@@ -164,7 +180,7 @@ GoldDev('sendMessage',[
 'reply_to_message_id'=>$message_id,
 'parse_mode' => 'MarkDown',
 ]);
-ToDie($MySQLi);
+ToDie($dbConn);
 }
 if($update and in_array($from_id,$BotAdmins) and $tc == 'private'){
 if(isset($message->document)){
@@ -214,7 +230,9 @@ $SendType = 'message';
 $ArrType = 'text';
 }
 $oldtime = microtime(true);
-$GetAllUsers = mysqli_fetch_all(mysqli_query($MySQLi, "SELECT `id` FROM `group`"));
+ $query = $dbConn->prepare("SELECT `id` FROM `group`");
+    $query->execute();
+    $GetAllUsers = $query->fetchall();
 GoldDev('sendMessage',[
 'chat_id' => $from_id,
 'text'=> 'عملیات ارسال پیام شروع شد ...',
@@ -243,26 +261,9 @@ GoldDev('sendMessage',[
 'parse_mode'=>"HTML",
 'reply_to_message_id'=>$message_id,
 ]);
-ToDie($MySQLi);
+ToDie($dbConn);
 }
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-ToDie($MySQLi);
+ToDie($dbConn);
