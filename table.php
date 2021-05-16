@@ -1,21 +1,24 @@
-<?php
-include ('config.php');
-$MySQLi = new mysqli('localhost',$DB['username'],$DB['password'],$DB['dbname']);
-$MySQLi->query("SET NAMES 'utf8'");
-$MySQLi->set_charset('utf8mb4');
-if ($MySQLi->connect_error){
-echo 'Connection failed: ' . $MySQLi->connect_error;
-$MySQLi->close();
-die;
-}
-$UsersTable = "CREATE TABLE `group` (
-`id` VARCHAR(100) PRIMARY KEY,
-`name` VARCHAR(200) DEFAULT NULL,
-`date` VARCHAR(200) DEFAULT NULL
-) default charset = utf8mb4";
-if($MySQLi->query($UsersTable) === TRUE)
-echo "Table created successfully";
-else
-echo "Error creating table : " . $MySQLi->error;
-$MySQLi->close();
-die;
+<?php  
+    include ('config.php');
+    $dbHost="localhost";  
+    $dbName=$DB['dbname'];  
+    $dbUser=$DB['username'];     
+    $dbPassword=$DB['password'];
+    try{  
+        $dbConn= new PDO("mysql:host=$dbHost;dbname=$dbName",$dbUser,$dbPassword);  
+
+     $UsersTable = "CREATE TABLE `group` (
+    `id` VARCHAR(100) PRIMARY KEY,
+    `name` VARCHAR(200) DEFAULT NULL,
+    `date` VARCHAR(200) DEFAULT NULL
+    ) default charset = utf8mb4";
+    $dbConn->query($UsersTable);
+    Echo "Table created successfully";     
+        
+       
+    } catch(Exception $e){  
+    Echo "Connection failed" . $e->getMessage();  
+    }  
+// this command close the connection.  
+    $dbConn = null;   
+?>  
